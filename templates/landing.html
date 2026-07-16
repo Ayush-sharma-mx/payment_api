@@ -116,7 +116,7 @@
   section.ledger > .sub{ margin-bottom:32px; }
 
   .entry{
-    display:grid; grid-template-columns:64px 1fr auto; gap:18px;
+    display:grid; grid-template-columns:64px 1fr auto auto; gap:16px;
     padding:18px 0; border-top:1px solid var(--rule); align-items:start;
   }
   .entry:last-child{ border-bottom:1px solid var(--rule); }
@@ -127,7 +127,15 @@
   .verb.post{ color:var(--stamp); border-color:var(--stamp-dim); }
   .entry .path{ color:var(--ink); font-size:13.5px; margin-bottom:4px; }
   .entry .desc{ color:var(--ink-dim2); font-size:12.5px; max-width:56ch; }
-  .entry .badge{ font-size:10.5px; color:var(--stamp); letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+  .entry .badge{ font-size:10.5px; color:var(--stamp); letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; align-self:center; }
+  .copy-btn{
+    background:transparent; border:1px solid var(--rule); color:var(--ink-dim2);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 10px;
+    cursor:pointer; border-radius:2px; transition:all .15s ease; align-self:center;
+    white-space:nowrap;
+  }
+  .copy-btn:hover{ border-color:var(--stamp); color:var(--stamp); }
+  .copy-btn.copied{ border-color:var(--ok); color:var(--ok); }
 
   footer{ padding:40px 0 64px; color:var(--ink-dim2); font-size:12px; }
 </style>
@@ -198,6 +206,7 @@
         <div class="desc">Atomic charge — SHA-256 fingerprint check, row-level lock, self-healing stale-lock recovery.</div>
       </div>
       <span class="badge">Core</span>
+      <button class="copy-btn" onclick="copyCurl(this, `curl -X POST https://payment-api-3fi4.onrender.com/api/payments/process-payment/ -H 'Content-Type: application/json' -H 'X-API-KEY: {{ demo_api_key }}' -H 'Idempotency-Key: demo-key-01' -d '{\"amount\": \"125.50\", \"currency\": \"USD\", \"payer_email\": \"live@example.com\"}'`)">📋 Copy cURL</button>
     </div>
     <div class="entry">
       <span class="verb">GET</span>
@@ -206,6 +215,7 @@
         <div class="desc">PII-scrubbed ledger of every attempt, with AI explanations distinguishing benign retries from anomalies.</div>
       </div>
       <span class="badge">AI layer</span>
+      <button class="copy-btn" onclick="copyCurl(this, `curl -X GET https://payment-api-3fi4.onrender.com/api/ai/events/ -H 'X-API-KEY: {{ demo_api_key }}'`)">📋 Copy cURL</button>
     </div>
     <div class="entry">
       <span class="verb">GET</span>
@@ -214,6 +224,7 @@
         <div class="desc">Weighted rule-based score, LLM adjustment clamped to ±0.1 with a written justification.</div>
       </div>
       <span class="badge">AI layer</span>
+      <button class="copy-btn" onclick="copyCurl(this, `curl -X GET https://payment-api-3fi4.onrender.com/api/ai/risk-scores/ -H 'X-API-KEY: {{ demo_api_key }}'`)">📋 Copy cURL</button>
     </div>
     <div class="entry">
       <span class="verb post">POST</span>
@@ -222,6 +233,7 @@
         <div class="desc">Ask a question in English. SELECT-only, whitelisted tables, 500-row cap — every query logged.</div>
       </div>
       <span class="badge">AI layer</span>
+      <button class="copy-btn" onclick="copyCurl(this, `curl -X POST https://payment-api-3fi4.onrender.com/api/ai/query/ -H 'Content-Type: application/json' -H 'X-API-KEY: {{ demo_api_key }}' -d '{\"question\": \"Show me duplicate payments from the last hour\", \"auto_execute\": true}'`)">📋 Copy cURL</button>
     </div>
   </section>
 
@@ -285,6 +297,15 @@ async function runLiveProof() {
     btn.disabled = false;
     btn.innerText = "↻ Fire duplicate request";
   }
+}
+
+function copyCurl(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const oldText = btn.innerText;
+    btn.innerText = "✓ Copied";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.innerText = oldText; btn.classList.remove("copied"); }, 2000);
+  });
 }
 </script>
 </body>

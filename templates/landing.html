@@ -197,43 +197,64 @@
 
   <section class="ledger">
     <h2 class="display">Endpoints</h2>
-    <p class="sub">Everything below is live. Swap the API key for your own.</p>
+    <p class="sub">Everything below is live. Swap the API key for your own. Click any row to view full cURL or copy directly.</p>
 
-    <div class="entry">
+    <div class="entry" onclick="toggleRowCurl(this, event)">
       <span class="verb post">POST</span>
       <div>
         <div class="path">/api/payments/process-payment/</div>
         <div class="desc">Atomic charge — SHA-256 fingerprint check, row-level lock, self-healing stale-lock recovery.</div>
+        <div class="entry-curl" style="display:none; margin-top:10px; background:var(--rule); padding:10px; border-radius:4px; font-size:11.5px; overflow-x:auto;">
+          <code>curl -X POST https://payment-api-3fi4.onrender.com/api/payments/process-payment/ \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: {{ demo_api_key }}" \
+  -H "Idempotency-Key: demo-key-01" \
+  -d '{"amount": "125.50", "currency": "USD", "payer_email": "live@example.com"}'</code>
+        </div>
       </div>
       <span class="badge">Core</span>
-      <button class="copy-btn" onclick="copyCurl(this, `curl -X POST https://payment-api-3fi4.onrender.com/api/payments/process-payment/ -H 'Content-Type: application/json' -H 'X-API-KEY: {{ demo_api_key }}' -H 'Idempotency-Key: demo-key-01' -d '{\"amount\": \"125.50\", \"currency\": \"USD\", \"payer_email\": \"live@example.com\"}'`)">📋 Copy cURL</button>
+      <button class="copy-btn" data-curl='curl -X POST https://payment-api-3fi4.onrender.com/api/payments/process-payment/ -H "Content-Type: application/json" -H "X-API-KEY: {{ demo_api_key }}" -H "Idempotency-Key: demo-key-01" -d "{\"amount\": \"125.50\", \"currency\": \"USD\", \"payer_email\": \"live@example.com\"}"' onclick="copyCurl(this, event)">📋 Copy cURL</button>
     </div>
-    <div class="entry">
+    <div class="entry" onclick="toggleRowCurl(this, event)">
       <span class="verb">GET</span>
       <div>
         <div class="path">/api/ai/events/</div>
         <div class="desc">PII-scrubbed ledger of every attempt, with AI explanations distinguishing benign retries from anomalies.</div>
+        <div class="entry-curl" style="display:none; margin-top:10px; background:var(--rule); padding:10px; border-radius:4px; font-size:11.5px; overflow-x:auto;">
+          <code>curl -X GET https://payment-api-3fi4.onrender.com/api/ai/events/ \
+  -H "X-API-KEY: {{ demo_api_key }}"</code>
+        </div>
       </div>
       <span class="badge">AI layer</span>
-      <button class="copy-btn" onclick="copyCurl(this, `curl -X GET https://payment-api-3fi4.onrender.com/api/ai/events/ -H 'X-API-KEY: {{ demo_api_key }}'`)">📋 Copy cURL</button>
+      <button class="copy-btn" data-curl='curl -X GET https://payment-api-3fi4.onrender.com/api/ai/events/ -H "X-API-KEY: {{ demo_api_key }}"' onclick="copyCurl(this, event)">📋 Copy cURL</button>
     </div>
-    <div class="entry">
+    <div class="entry" onclick="toggleRowCurl(this, event)">
       <span class="verb">GET</span>
       <div>
         <div class="path">/api/ai/risk-scores/</div>
         <div class="desc">Weighted rule-based score, LLM adjustment clamped to ±0.1 with a written justification.</div>
+        <div class="entry-curl" style="display:none; margin-top:10px; background:var(--rule); padding:10px; border-radius:4px; font-size:11.5px; overflow-x:auto;">
+          <code>curl -X GET https://payment-api-3fi4.onrender.com/api/ai/risk-scores/ \
+  -H "X-API-KEY: {{ demo_api_key }}"</code>
+        </div>
       </div>
       <span class="badge">AI layer</span>
-      <button class="copy-btn" onclick="copyCurl(this, `curl -X GET https://payment-api-3fi4.onrender.com/api/ai/risk-scores/ -H 'X-API-KEY: {{ demo_api_key }}'`)">📋 Copy cURL</button>
+      <button class="copy-btn" data-curl='curl -X GET https://payment-api-3fi4.onrender.com/api/ai/risk-scores/ -H "X-API-KEY: {{ demo_api_key }}"' onclick="copyCurl(this, event)">📋 Copy cURL</button>
     </div>
-    <div class="entry">
+    <div class="entry" onclick="toggleRowCurl(this, event)">
       <span class="verb post">POST</span>
       <div>
         <div class="path">/api/ai/query/</div>
         <div class="desc">Ask a question in English. SELECT-only, whitelisted tables, 500-row cap — every query logged.</div>
+        <div class="entry-curl" style="display:none; margin-top:10px; background:var(--rule); padding:10px; border-radius:4px; font-size:11.5px; overflow-x:auto;">
+          <code>curl -X POST https://payment-api-3fi4.onrender.com/api/ai/query/ \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: {{ demo_api_key }}" \
+  -d '{"question": "Show me duplicate payments from the last hour", "auto_execute": true}'</code>
+        </div>
       </div>
       <span class="badge">AI layer</span>
-      <button class="copy-btn" onclick="copyCurl(this, `curl -X POST https://payment-api-3fi4.onrender.com/api/ai/query/ -H 'Content-Type: application/json' -H 'X-API-KEY: {{ demo_api_key }}' -d '{\"question\": \"Show me duplicate payments from the last hour\", \"auto_execute\": true}'`)">📋 Copy cURL</button>
+      <button class="copy-btn" data-curl='curl -X POST https://payment-api-3fi4.onrender.com/api/ai/query/ -H "Content-Type: application/json" -H "X-API-KEY: {{ demo_api_key }}" -d "{\"question\": \"Show me duplicate payments from the last hour\", \"auto_execute\": true}"' onclick="copyCurl(this, event)">📋 Copy cURL</button>
     </div>
   </section>
 
@@ -280,14 +301,24 @@ async function runLiveProof() {
   try {
     const r1 = await fetch(url, { method: 'POST', headers, body });
     const data1 = await r1.json();
+    console.log("Request 1 raw JSON response:", data1);
+    const pay1 = data1.payment || data1;
+    const id1 = pay1.id || pay1.payment_id || 'N/A';
+    const amt1 = pay1.amount || '125.50';
+    const stat1 = pay1.status || 'processed';
     tag1.innerText = `Request 1 · ${r1.status}`;
-    pre1.innerHTML = `<span class="k">"id"</span>: <span class="s">"${data1.payment_id || data1.id || 'N/A'}"</span>\n<span class="k">"amount"</span>: <span class="s">"${data1.amount || '125.50'}"</span>\n<span class="k">"status"</span>: <span class="s">"${data1.status || 'processed'}"</span>`;
+    pre1.innerHTML = `<span class="k">"id"</span>: <span class="s">"${id1}"</span>\n<span class="k">"amount"</span>: <span class="s">"${amt1}"</span>\n<span class="k">"status"</span>: <span class="s">"${stat1}"</span>`;
 
     const r2 = await fetch(url, { method: 'POST', headers, body });
     const data2 = await r2.json();
+    console.log("Request 2 raw JSON response:", data2);
+    const pay2 = data2.payment || data2;
+    const id2 = pay2.id || pay2.payment_id || 'N/A';
+    const amt2 = pay2.amount || '125.50';
+    const stat2 = pay2.status || 'processed';
     tag2.className = 'tag match';
     tag2.innerText = `Request 2 · ${r2.status} (replay)`;
-    pre2.innerHTML = `<span class="k">"id"</span>: <span class="s">"${data2.payment_id || data2.id || 'N/A'}"</span>\n<span class="k">"amount"</span>: <span class="s">"${data2.amount || '125.50'}"</span>\n<span class="k">"status"</span>: <span class="s">"${data2.status || 'processed'}"</span>`;
+    pre2.innerHTML = `<span class="k">"id"</span>: <span class="s">"${id2}"</span>\n<span class="k">"amount"</span>: <span class="s">"${amt2}"</span>\n<span class="k">"status"</span>: <span class="s">"${stat2}"</span>`;
 
     verifyMsg.innerHTML = `<b>Same payment ID, same timestamp, one charge.</b> Request 2 never reached the gateway — it was intercepted by the row lock and served from the idempotency cache. No retry logic on your end needed.`;
   } catch(err) {
@@ -299,13 +330,26 @@ async function runLiveProof() {
   }
 }
 
-function copyCurl(btn, text) {
+function copyCurl(btn, event) {
+  if (event && event.stopPropagation) event.stopPropagation();
+  const text = btn.getAttribute('data-curl');
+  if (!text) return;
   navigator.clipboard.writeText(text).then(() => {
     const oldText = btn.innerText;
     btn.innerText = "✓ Copied";
     btn.classList.add("copied");
     setTimeout(() => { btn.innerText = oldText; btn.classList.remove("copied"); }, 2000);
   });
+}
+
+function toggleRowCurl(row, event) {
+  if (event.target && (event.target.classList.contains('copy-btn') || event.target.closest('.copy-btn'))) {
+    return;
+  }
+  const codeBox = row.querySelector('.entry-curl');
+  if (codeBox) {
+    codeBox.style.display = (codeBox.style.display === 'none' || !codeBox.style.display) ? 'block' : 'none';
+  }
 }
 </script>
 </body>

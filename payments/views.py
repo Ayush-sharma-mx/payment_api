@@ -14,8 +14,10 @@ from .serializers import (
     PaymentResponseSerializer,
 )
 from .permissions import HasAPIKey
+from .signals import payment_processed
 
 logger = logging.getLogger(__name__)
+
 
 
 def _hash_body(body: bytes) -> str:
@@ -122,8 +124,21 @@ class PaymentView(APIView):
                 }
                 record.response_data = error_response
                 record.status_code = status.HTTP_502_BAD_GATEWAY
-                record.status = IdempotencyRecord.Status.COMPLETED
                 record.save(update_fields=["response_data", "status_code", "status", "updated_at"])
+                payment_processed.send(
+                    sender=self.__class__,
+                    event_type="payment_failed",
+                    payment=None,
+                    idempotency_record=record,
+                    meta={
+                        "latency_ms": 0,
+                        "status_code": status.HTTP_502_BAD_GATEWAY,
+                        "idempotency_key": record.idempotency_key,
+                        "request_hash": record.request_body_hash,
+                        "error_detail": str(exc),
+                        "api_key_prefix": getattr(request, "api_key_prefix", ""),
+                    },
+                )
                 return Response(error_response, status=status.HTTP_502_BAD_GATEWAY)
 
             # ── 6. Build and persist the response ────────────────────────
@@ -154,7 +169,25 @@ class PaymentView(APIView):
                 ]
             )
 
+            # Fire domain event to async AI layer
+            payment_processed.send(
+                sender=self.__class__,
+                event_type="payment_created",
+                payment=payment,
+                idempotency_record=record,
+                meta={
+                    "latency_ms": 0,
+                    "retry_count": 0,
+                    "locked_at": record.locked_at,
+                    "status_code": resp_status,
+                    "idempotency_key": record.idempotency_key,
+                    "request_hash": record.request_body_hash,
+                    "api_key_prefix": getattr(request, "api_key_prefix", ""),
+                },
+            )
+
             return Response(response_data, status=resp_status)
+
 
         except Exception as exc:
             logger.exception("Unexpected error in PaymentView for key=%s", key)
@@ -190,6 +223,19 @@ class PaymentView(APIView):
         # different serialised body.
         if record.status == IdempotencyRecord.Status.PROCESSING and not record.is_locked:
             record.delete()
+            payment_processed.send(
+                sender=self.__class__,
+                event_type="stale_lock_recovered",
+                payment=None,
+                idempotency_record=record,
+                meta={
+                    "latency_ms": 0,
+                    "status_code": status.HTTP_409_CONFLICT,
+                    "idempotency_key": record.idempotency_key,
+                    "request_hash": record.request_body_hash,
+                    "api_key_prefix": getattr(self.request, "api_key_prefix", ""),
+                },
+            )
             return Response(
                 {
                     "error": "Previous processing attempt timed out. Please retry.",
@@ -211,6 +257,19 @@ class PaymentView(APIView):
 
         # Mismatched body = client reused a key for a different request.
         if record.request_body_hash != body_hash:
+            payment_processed.send(
+                sender=self.__class__,
+                event_type="payload_mismatch",
+                payment=record.payment,
+                idempotency_record=record,
+                meta={
+                    "latency_ms": 0,
+                    "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "idempotency_key": record.idempotency_key,
+                    "request_hash": body_hash,
+                    "api_key_prefix": getattr(self.request, "api_key_prefix", ""),
+                },
+            )
             return Response(
                 {
                     "error": "Idempotency key has already been used with a different request payload.",
@@ -220,6 +279,19 @@ class PaymentView(APIView):
             )
 
         # Happy path: return the stored response.
+        payment_processed.send(
+            sender=self.__class__,
+            event_type="duplicate_detected",
+            payment=record.payment,
+            idempotency_record=record,
+            meta={
+                "latency_ms": 0,
+                "status_code": record.status_code,
+                "idempotency_key": record.idempotency_key,
+                "request_hash": record.request_body_hash,
+                "api_key_prefix": getattr(self.request, "api_key_prefix", ""),
+            },
+        )
         return Response(record.response_data, status=record.status_code)
 
 

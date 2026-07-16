@@ -30,4 +30,9 @@ class HasAPIKey(permissions.BasePermission):
         hashed_key = hashlib.sha256(api_key.encode()).hexdigest()
 
         # Query the database
-        return APIKey.objects.filter(hashed_key=hashed_key, is_active=True).exists()
+        key_obj = APIKey.objects.filter(hashed_key=hashed_key, is_active=True).first()
+        if key_obj:
+            request.api_key = key_obj
+            request.api_key_prefix = key_obj.prefix
+            return True
+        return False

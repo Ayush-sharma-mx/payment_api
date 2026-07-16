@@ -406,5 +406,4 @@ This repository is completely pre-configured for instant **1-Click Production Cl
 ---
 
 ## 📄 License & Credits
-Built by **Ayush Sharma** & the **Google Deepmind Advanced Agentic Coding Team (`Antigravity`)**.
-Licensed under the MIT License. Designed for fault-tolerant, high-concurrency payment reliability and autonomous AI observability.
+Built by **Ayush Sharma**, with AI-assisted development. Licensed under the MIT License. Designed for fault-tolerant, high-concurrency payment reliability and AI-assisted observability.

@@ -47,8 +47,6 @@ def validate_sql(sql: str) -> tuple[bool, str, str]:
     if FORBIDDEN_SQL_REGEX.search(clean_sql):
         return False, "SQL contains forbidden modification/comment tokens.", clean_sql
 
-    # Check that any table names referenced after FROM/JOIN are in our whitelist
-    # Or simpler: verify that at least one whitelisted table is mentioned and NO non-whitelisted tables are queried
     found_tables = re.findall(r'\b(?:from|join)\s+([a-zA-Z0-9_]+)', clean_sql, re.IGNORECASE)
     if not found_tables:
         return False, "No valid whitelisted table specified in FROM clause.", clean_sql
@@ -57,7 +55,6 @@ def validate_sql(sql: str) -> tuple[bool, str, str]:
         if t.lower() not in WHITELISTED_TABLES:
             return False, f"Table '{t}' is not in the whitelisted schema.", clean_sql
 
-    # Enforce LIMIT <= 500
     limit_match = re.search(r'\blimit\s+(\d+)\b', clean_sql, re.IGNORECASE)
     if not limit_match:
         clean_sql += " LIMIT 100"
@@ -114,7 +111,6 @@ def execute_nl_query(user: str, question: str, auto_execute: bool = False) -> di
             "message": "SQL generated successfully. Set auto_execute=True or approve to run."
         }
 
-    # Execute read-only SQL
     start_time = time.time()
     rows = []
     try:

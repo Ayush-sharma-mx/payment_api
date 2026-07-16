@@ -52,7 +52,6 @@ class MockAdapter(BaseAdapter):
                 "recommended_fixes": ["Implement exponential jittered backoff on client SDKs.", "Optimize index on request_body_hash and idempotency_key."]
             }
         elif "whitelisted schema description" in prompt_lower or "select" in prompt_lower:
-            # NL2SQL generator mock
             if "duplicate" in prompt_lower:
                 response = {"sql": "SELECT event_type, COUNT(*) as count FROM ai_intelligence_paymentevent WHERE event_type = 'duplicate_detected' GROUP BY event_type LIMIT 100"}
             elif "fail" in prompt_lower or "rejected" in prompt_lower:
@@ -60,7 +59,6 @@ class MockAdapter(BaseAdapter):
             else:
                 response = {"sql": "SELECT event_type, status_code, latency_ms FROM ai_intelligence_paymentevent ORDER BY created_at DESC LIMIT 50"}
         else:
-            # Default summary
             response = {"summary": "Analysis completed successfully. Metrics indicate nominal operation within expected statistical bounds."}
 
         return json.dumps(response), f"mock-{model_name}", 150, 85
@@ -127,12 +125,10 @@ class LLMGateway:
         with open(template_path, "r", encoding="utf-8") as f:
             template_str = f.read()
 
-        # Render template variables safely without colliding with JSON braces {}
         rendered = template_str
         for key, val in variables.items():
             rendered = rendered.replace(f"{{{key}}}", str(val))
 
-        # Mandatory PII redaction before any prompt leaves your process
         scrubbed_prompt = redact_pii(rendered)
 
         adapter = self._get_adapter()
@@ -142,9 +138,7 @@ class LLMGateway:
             logger.error(f"LLM call failed for template {prompt_template}: {err}")
             raise LLMGatewayError(str(err))
 
-        # Parse and validate JSON schema
         try:
-            # Clean possible markdown code block wrappers (e.g. ```json ... ```)
             cleaned_text = raw_response.strip()
             if cleaned_text.startswith("```json"):
                 cleaned_text = cleaned_text[7:]

@@ -19,7 +19,6 @@ def compute_risk_score(event: PaymentEvent) -> RiskScore:
     now = timezone.now()
     window_start = now - timedelta(minutes=5)
 
-    # 1. Quantitative Feature Extraction
     recent_events = PaymentEvent.objects.filter(
         api_key_prefix=event.api_key_prefix,
         created_at__gte=window_start
@@ -29,14 +28,12 @@ def compute_risk_score(event: PaymentEvent) -> RiskScore:
     failed_count = recent_events.filter(status_code__gte=400).count()
     error_rate = (failed_count / retry_velocity) if retry_velocity > 0 else 0.0
 
-    # Check if request_fingerprint was reused across DIFFERENT idempotency keys (rotation abuse)
     fingerprint_reused_different_key = False
     if event.request_fingerprint:
         fingerprint_reused_different_key = PaymentEvent.objects.filter(
             request_fingerprint=event.request_fingerprint
         ).exclude(idempotency_key=event.idempotency_key).exists()
 
-    # 2. Deterministic Base Score Calculation
     base_score = 0.1  # baseline nominal risk
     if retry_velocity > 10:
         base_score += min(0.3, (retry_velocity - 10) * 0.02)
@@ -58,7 +55,6 @@ def compute_risk_score(event: PaymentEvent) -> RiskScore:
 
     scrubbed_facts = redact_data_structure(facts)
 
-    # 3. LLM Qualitative Assessment & Bounded Adjustment
     result = llm_gateway.run(
         prompt_template="risk_scoring",
         variables={"facts_json": json.dumps(scrubbed_facts, default=str)},
@@ -70,7 +66,6 @@ def compute_risk_score(event: PaymentEvent) -> RiskScore:
     except (ValueError, TypeError):
         raw_adjusted = base_score
 
-    # Strict ±0.1 clamping guardrail
     delta = raw_adjusted - base_score
     if delta > 0.1:
         adjusted_score = base_score + 0.1
@@ -81,7 +76,6 @@ def compute_risk_score(event: PaymentEvent) -> RiskScore:
 
     adjusted_score = round(max(0.0, min(1.0, adjusted_score)), 3)
 
-    # Assign risk band deterministically from final score
     if adjusted_score >= 0.7:
         risk_band = "high"
     elif adjusted_score >= 0.4:

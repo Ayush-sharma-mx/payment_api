@@ -35,7 +35,6 @@ def analyze_duplicate(event: PaymentEvent) -> DuplicateExplanation:
         "prior_events_for_key": prior_events,
     }
 
-    # Scrub any potential PII inside facts and ensure datetimes are stringified
     scrubbed_facts = redact_data_structure(_sanitize_for_json(facts))
 
     result = llm_gateway.run(

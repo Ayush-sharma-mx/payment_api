@@ -8,11 +8,9 @@ def seed_default_credentials(sender, **kwargs):
     from .models import APIKey
 
     User = get_user_model()
-    # Auto-seed superuser if it doesn't exist
     if not User.objects.filter(username="Ayush").exists():
         User.objects.create_superuser("Ayush", "ayush@example.com", "Tl02xd1@3140")
 
-    # Auto-seed submitted API key if it doesn't exist
     default_key = "pay_2b4ce484.F_6jW5rNjpa9DDj-JH0NtYNMMB2WIJn07cLwE4uEdu4"
     hashed = hashlib.sha256(default_key.encode()).hexdigest()
     if not APIKey.objects.filter(hashed_key=hashed).exists():

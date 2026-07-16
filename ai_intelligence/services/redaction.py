@@ -4,7 +4,6 @@ import datetime
 import decimal
 import uuid
 
-# Regex patterns for common PII and PCI-DSS sensitive data
 CREDIT_CARD_REGEX = re.compile(r'\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})\b')
 CVV_REGEX = re.compile(r'\b(?:cvv|cvc|cvv2|security_code)\s*[:=]\s*([0-9]{3,4})\b', re.IGNORECASE)
 EMAIL_REGEX = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b')

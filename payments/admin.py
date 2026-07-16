@@ -42,7 +42,6 @@ class APIKeyAdmin(admin.ModelAdmin):
             from django.contrib import messages
             from django.utils.safestring import mark_safe
 
-            # Generate the key pair
             prefix = secrets.token_hex(4)  # 8 chars
             secret = secrets.token_urlsafe(32)  # Secure random string
             plaintext_key = f"pay_{prefix}.{secret}"
@@ -50,10 +49,8 @@ class APIKeyAdmin(admin.ModelAdmin):
             obj.prefix = prefix
             obj.hashed_key = hashlib.sha256(plaintext_key.encode()).hexdigest()
 
-            # Save the object
             super().save_model(request, obj, form, change)
 
-            # Show the plaintext key to the user in a notice box
             messages.success(
                 request,
                 mark_safe(

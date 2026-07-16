@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 try:
     from celery import shared_task
 except ImportError:
-    # Graceful fallback if Celery library is not installed
     def shared_task(*args, **kwargs):
         def decorator(func):
             func.delay = func
@@ -33,13 +32,11 @@ def _run_event_analysis(event_id: int):
 
     logger.info(f"Starting AI analysis for PaymentEvent #{event.id} ({event.event_type})")
 
-    # 1. Always run risk scoring across every payment event
     try:
         compute_risk_score(event)
     except Exception as e:
         logger.error(f"Error computing risk score for Event #{event.id}: {e}", exc_info=True)
 
-    # 2. Run domain-specific narration / failure classification
     if event.event_type == "duplicate_detected":
         try:
             analyze_duplicate(event)
@@ -80,7 +77,6 @@ def detect_log_anomalies():
     error_count = error_events.count()
     error_rate = error_count / total_count
 
-    # Check for latency anomalies (avg > 500ms)
     high_latency_events = recent_events.filter(latency_ms__gt=500)
     high_latency_count = high_latency_events.count()
 

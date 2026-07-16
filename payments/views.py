@@ -56,7 +56,6 @@ class PaymentView(APIView):
     permission_classes = [HasAPIKey]
 
     def post(self, request):
-        # ── 1. Extract & validate the idempotency key ────────────────────
         key = request.headers.get("Idempotency-Key")
         if not key:
             return Response(
@@ -76,9 +75,6 @@ class PaymentView(APIView):
 
         body_hash = _hash_body(request.body)
 
-        # ── 2. Atomically check for an existing record ───────────────────
-        #    select_for_update prevents two concurrent requests with the
-        #    same key from both passing the existence check.
         try:
             with transaction.atomic():
                 existing = (
@@ -90,7 +86,6 @@ class PaymentView(APIView):
                 if existing:
                     return self._handle_existing_record(existing, body_hash)
 
-                # ── 3. Validate the payment payload ──────────────────────
                 serializer = PaymentCreateSerializer(data=request.data)
                 if not serializer.is_valid():
                     return Response(
@@ -98,7 +93,6 @@ class PaymentView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                # ── 4. Acquire the lock by creating a 'processing' record ─
                 record = IdempotencyRecord.objects.create(
                     idempotency_key=key,
                     request_method=request.method,
@@ -108,16 +102,12 @@ class PaymentView(APIView):
                     locked_at=timezone.now(),
                 )
 
-            # ── 5. Process the payment (outside the select_for_update
-            #       transaction so the lock row is already visible) ────────
             try:
                 payment, success = _simulate_payment_processing(
                     serializer.validated_data
                 )
             except Exception as exc:
                 logger.exception("Payment processing failed for key=%s", key)
-                # Mark idempotency record as completed with an error
-                # so retries don't re-attempt.
                 error_response = {
                     "error": "Payment processing failed.",
                     "detail": str(exc),
@@ -141,7 +131,6 @@ class PaymentView(APIView):
                 )
                 return Response(error_response, status=status.HTTP_502_BAD_GATEWAY)
 
-            # ── 6. Build and persist the response ────────────────────────
             if success:
                 response_data = {
                     "message": "Payment processed successfully.",
@@ -169,7 +158,6 @@ class PaymentView(APIView):
                 ]
             )
 
-            # Fire domain event to async AI layer
             payment_processed.send(
                 sender=self.__class__,
                 event_type="payment_created",
@@ -196,7 +184,6 @@ class PaymentView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    # ── Helpers ──────────────────────────────────────────────────────────
 
     def _handle_existing_record(
         self, record: IdempotencyRecord, body_hash: str
@@ -204,11 +191,8 @@ class PaymentView(APIView):
         """Return the cached response or an appropriate error for an
         existing idempotency record."""
 
-        # Expired keys can be retried as new requests.
         if record.is_expired:
             record.delete()
-            # Return a 409 so the client knows to retry; this avoids
-            # silently re-processing inside the same transaction.
             return Response(
                 {
                     "error": "Idempotency key has expired. Please retry with the same key.",
@@ -217,10 +201,6 @@ class PaymentView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # Stale lock (server crashed mid-processing) — delete and let
-        # the client retry.  Must be checked before body-hash comparison
-        # because the original request that crashed may have had a
-        # different serialised body.
         if record.status == IdempotencyRecord.Status.PROCESSING and not record.is_locked:
             record.delete()
             payment_processed.send(
@@ -244,7 +224,6 @@ class PaymentView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # Still processing (another thread holds the lock).
         if record.is_locked:
             return Response(
                 {
@@ -255,7 +234,6 @@ class PaymentView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # Mismatched body = client reused a key for a different request.
         if record.request_body_hash != body_hash:
             payment_processed.send(
                 sender=self.__class__,
@@ -278,7 +256,6 @@ class PaymentView(APIView):
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
 
-        # Happy path: return the stored response.
         payment_processed.send(
             sender=self.__class__,
             event_type="duplicate_detected",

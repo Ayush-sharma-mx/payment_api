@@ -24,7 +24,6 @@ class PaymentIdempotencyTests(TestCase):
             "description": "Test payment",
         }
 
-        # Create a valid API key in database
         self.prefix = secrets.token_hex(4)
         self.secret = secrets.token_urlsafe(32)
         self.raw_api_key = f"pay_{self.prefix}.{self.secret}"
@@ -37,13 +36,11 @@ class PaymentIdempotencyTests(TestCase):
             is_active=True
         )
 
-        # Pre-authenticate the client with the valid API key
         self.client.credentials(HTTP_X_API_KEY=self.raw_api_key)
 
     def _make_key(self):
         return str(uuid.uuid4())
 
-    # ── API Key Security ──────────────────────────────────────────────────
 
     def test_missing_api_key_returns_403(self):
         """Requests without an API key must be rejected with 403."""
@@ -81,7 +78,6 @@ class PaymentIdempotencyTests(TestCase):
         )
         self.assertEqual(resp.status_code, 403)
 
-    # ── Basic idempotency ────────────────────────────────────────────────
 
     def test_first_request_creates_payment(self):
         """A fresh idempotency key should create a payment and return 201."""
@@ -116,7 +112,6 @@ class PaymentIdempotencyTests(TestCase):
         )
         self.assertEqual(resp1.status_code, resp2.status_code)
         self.assertEqual(resp1.data, resp2.data)
-        # Only one payment should exist.
         self.assertEqual(Payment.objects.count(), 1)
 
     def test_different_keys_create_different_payments(self):
@@ -130,7 +125,6 @@ class PaymentIdempotencyTests(TestCase):
             )
         self.assertEqual(Payment.objects.count(), 3)
 
-    # ── Validation errors ────────────────────────────────────────────────
 
     def test_missing_idempotency_key_returns_400(self):
         resp = self.client.post(self.url, data=self.valid_payload, format="json")
@@ -168,7 +162,6 @@ class PaymentIdempotencyTests(TestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
-    # ── Body mismatch detection ──────────────────────────────────────────
 
     def test_reused_key_with_different_body_returns_422(self):
         """Reusing a key with a different payload must be rejected."""
@@ -188,13 +181,11 @@ class PaymentIdempotencyTests(TestCase):
         )
         self.assertEqual(resp.status_code, 422)
 
-    # ── Expired key handling ─────────────────────────────────────────────
 
     def test_expired_key_returns_409_with_retry(self):
         """An expired idempotency record should be deleted and a 409
         returned so the client retries."""
         key = self._make_key()
-        # First create a completed record, then backdate its expiry.
         self.client.post(
             self.url,
             data=self.valid_payload,
@@ -213,7 +204,6 @@ class PaymentIdempotencyTests(TestCase):
         self.assertEqual(resp.status_code, 409)
         self.assertTrue(resp.data.get("retry"))
 
-    # ── Stale lock recovery ──────────────────────────────────────────────
 
     def test_stale_processing_record_returns_409_with_retry(self):
         """A 'processing' record whose lock has expired should be cleaned
@@ -221,7 +211,6 @@ class PaymentIdempotencyTests(TestCase):
         import hashlib, json
 
         key = self._make_key()
-        # Compute the hash that the view will compute for our payload.
         body_bytes = json.dumps(self.valid_payload).encode("utf-8")
         body_hash = hashlib.sha256(body_bytes).hexdigest()
 
@@ -242,7 +231,6 @@ class PaymentIdempotencyTests(TestCase):
         self.assertEqual(resp.status_code, 409)
         self.assertTrue(resp.data.get("retry"))
 
-    # ── Detail & list views ──────────────────────────────────────────────
 
     def test_payment_detail_view(self):
         key = self._make_key()

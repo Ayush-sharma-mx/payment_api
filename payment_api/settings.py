@@ -14,26 +14,19 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
 load_dotenv(BASE_DIR / '.env')
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-g#&vmp9)5n*)@_+@ou#t+5zxhdmhw%u^u3iicw3cvz64)au179')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
 ALLOWED_HOSTS = ['*'] if DEBUG else [host.strip() for host in os.environ.get('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -78,8 +71,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'payment_api.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -89,8 +80,6 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -108,8 +97,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -120,8 +107,6 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -134,17 +119,13 @@ STORAGES = {
     },
 }
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# AI Payment Intelligence Layer Settings
 AI_PROVIDER = os.environ.get("AI_PROVIDER", "mock")  # Options: mock, anthropic, openai, gemini
 AI_MODEL_NAME = os.environ.get("AI_MODEL_NAME", "claude-3-5-sonnet-20241022")
 AI_API_KEY = os.environ.get("AI_API_KEY", "")
 
-# Celery / Async Worker Settings
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "True").lower() == "true"

@@ -69,7 +69,6 @@ class CoreAnalyzersTests(TestCase):
         self.assertGreater(analysis.confidence, 0.0)
 
     def test_compute_risk_score_hybrid_clamping(self):
-        # Create multiple events to drive up base velocity and trigger fingerprint reuse across keys
         for i in range(15):
             PaymentEvent.objects.create(
                 event_type="payment_failed",
@@ -81,8 +80,6 @@ class CoreAnalyzersTests(TestCase):
 
         risk = compute_risk_score(self.event)
         self.assertIsInstance(risk, RiskScore)
-        # Base score calculation: 0.1 + 0.12 (velocity) + 0.4 (shared hash) + 0.2 (error rate) = 0.82
-        # Mock adjusted_score is 0.25, delta (-0.57) clamped to -0.1 -> 0.72!
         self.assertGreaterEqual(risk.score, 0.65)
         self.assertEqual(risk.risk_band, "high")
         self.assertEqual(risk.factors["final_clamped_score"], risk.score)

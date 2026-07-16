@@ -23,17 +23,14 @@ def draft_incident_postmortem(title: str = None, triggered_by_event: PaymentEven
     failed_events = events.filter(status_code__gte=400)
     failed_count = failed_events.count()
 
-    # Aggregate errors by status code
     status_breakdown = {}
     for ev in failed_events:
         sc = str(ev.status_code)
         status_breakdown[sc] = status_breakdown.get(sc, 0) + 1
 
-    # Affected API keys / endpoints
     affected_keys = list(failed_events.values_list("api_key_prefix", flat=True).distinct())
     affected_endpoints = ["/api/payments/process-payment/"] if failed_count > 0 else []
 
-    # Timeline sampling
     timeline = []
     if failed_count > 0:
         first_err = failed_events.order_by("created_at").first()

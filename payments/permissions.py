@@ -14,10 +14,8 @@ class HasAPIKey(permissions.BasePermission):
     message = "Invalid or missing API key."
 
     def has_permission(self, request, view):
-        # 1. Look for key in X-API-Key header
         api_key = request.headers.get("X-API-Key")
 
-        # 2. If not found, look in Authorization header
         if not api_key:
             auth_header = request.headers.get("Authorization")
             if auth_header and auth_header.startswith("Api-Key "):
@@ -26,10 +24,8 @@ class HasAPIKey(permissions.BasePermission):
         if not api_key:
             return False
 
-        # Hash the incoming key to compare it with the stored hash
         hashed_key = hashlib.sha256(api_key.encode()).hexdigest()
 
-        # Query the database
         key_obj = APIKey.objects.filter(hashed_key=hashed_key, is_active=True).first()
         if key_obj:
             request.api_key = key_obj

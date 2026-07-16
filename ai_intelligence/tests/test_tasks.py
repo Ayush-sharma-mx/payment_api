@@ -16,9 +16,7 @@ class TaskTests(TestCase):
         )
         analyze_event(event.id)
 
-        # Check DuplicateExplanation created
         self.assertTrue(DuplicateExplanation.objects.filter(event=event).exists())
-        # Check RiskScore created
         self.assertTrue(RiskScore.objects.filter(idempotency_key="key_task_1").exists())
 
     def test_detect_log_anomalies_triggers_during_error_spike(self):

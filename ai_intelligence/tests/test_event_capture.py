@@ -48,11 +48,9 @@ class EventCaptureTests(TestCase):
         self.assertEqual(event.api_key_prefix, self.api_key.prefix)
 
     def test_duplicate_detected_emits_event(self):
-        # First request
         self.client.post("/api/payments/process-payment/", self.payload, format="json", **self.headers)
         initial_count = PaymentEvent.objects.count()
 
-        # Second request (duplicate)
         response = self.client.post("/api/payments/process-payment/", self.payload, format="json", **self.headers)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(PaymentEvent.objects.count(), initial_count + 1)

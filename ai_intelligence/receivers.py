@@ -24,7 +24,6 @@ def on_payment_processed(sender, event_type, payment, idempotency_record, meta, 
 
         sanitized_meta = _sanitize_for_json(meta or {})
 
-        # Use an atomic savepoint if inside a transaction so observer errors can't poison the parent transaction
         try:
             with transaction.atomic():
                 event = PaymentEvent.objects.create(
@@ -42,7 +41,6 @@ def on_payment_processed(sender, event_type, payment, idempotency_record, meta, 
             logger.error(f"Failed to record PaymentEvent inside savepoint: {db_err}")
             return
 
-        # Enqueue asynchronous AI analysis task if Celery is available and configured
         try:
             from .tasks import analyze_event
             analyze_event.delay(event.id)
